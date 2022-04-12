@@ -9,6 +9,10 @@
     android:gravity="center"
     tools:context=".MainActivity">
 
+    <ImageView
+        android:id="@+id/img_qrcode"
+        android:layout_width="200dp"
+        android:layout_height="200dp"/>
     <TextView
         android:id="@+id/tv_text"
         android:layout_width="wrap_content"
@@ -26,5 +30,10 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="gallery"/>
+    <Button
+        android:id="@+id/btn_upload"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="upload"/>
 
 </LinearLayout>

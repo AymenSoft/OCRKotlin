@@ -3,8 +3,6 @@ package com.aymensoft.ocrkotlin
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.util.SparseArray
 import android.view.SurfaceHolder
 import android.view.SurfaceHolder.Callback
@@ -24,10 +22,19 @@ class CameraViewActivity: AppCompatActivity() {
     private lateinit var textRecognizer: TextRecognizer
     private lateinit var cameraSource: CameraSource
 
+    private var textResult = ""
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityCameraViewBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        binding.btnCamera.setOnClickListener {
+            val data = Intent()
+            data.putExtra("text", textResult)
+            setResult(RESULT_OK, data)
+            finish()
+        }
 
         textRecognition()
 
@@ -60,16 +67,8 @@ class CameraViewActivity: AppCompatActivity() {
                         stringBuilder.append("${textBlock.value} ")
                     }
                 }
-                val result = stringBuilder.toString()
-                val handler = Handler(Looper.getMainLooper())
-                handler.post {
-                    kotlin.run {
-                        val data = Intent()
-                        data.putExtra("text", result)
-                        setResult(RESULT_OK, data)
-                        finish()
-                    }
-                }
+                textResult = stringBuilder.toString()
+                binding.btnCamera.text = textResult
             }
         })
     }

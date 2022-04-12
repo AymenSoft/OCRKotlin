@@ -1,35 +1,46 @@
 package com.aymensoft.ocrkotlin
 
 import android.Manifest.permission.*
+import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
-import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
+import android.os.*
 import android.provider.MediaStore
 import android.util.Log
-import android.util.SparseArray
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.exifinterface.media.ExifInterface
 import com.aymensoft.ocrkotlin.databinding.ActivityMainBinding
+import com.bumptech.glide.Glide
+import com.google.firebase.ktx.Firebase
+import com.google.firebase.storage.ktx.storage
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.TextRecognizer
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
-import java.io.IOException
-import java.io.InputStream
-
+import java.io.*
+import java.io.File.separator
+import java.text.SimpleDateFormat
+import java.util.*
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
 
     private lateinit var textRecognizer: TextRecognizer
+
+    private var QRCODE = "https://api.qrserver.com/v1/create-qr-code/?size=150x150&bgcolor=255-255-255&data="
+
+    private var imagePath = ""
+    private var imageName = ""
+
+    private var storageRef = Firebase.storage.reference
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,6 +53,10 @@ class MainActivity : AppCompatActivity() {
 
         binding.btnGallery.setOnClickListener {
             storagePermissions()
+        }
+
+        binding.btnUpload.setOnClickListener {
+            saveQRCode()
         }
 
     }
@@ -114,7 +129,15 @@ class MainActivity : AppCompatActivity() {
     private val cameraResult =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == RESULT_OK && result.data != null) {
-                binding.tvText.text = result.data!!.getStringExtra("text")
+
+                val text = result.data!!.getStringExtra("text")
+
+                binding.tvText.text = text
+
+                Glide.with(this)
+                    .load("$QRCODE$text")
+                    .into(binding.imgQrcode)
+
             }
         }
 
@@ -162,10 +185,114 @@ class MainActivity : AppCompatActivity() {
         textRecognizer.process(inputImage)
             .addOnSuccessListener {
                 binding.tvText.text = it.text
+
+                Glide.with(this)
+                    .load("$QRCODE${it.text}")
+                    .into(binding.imgQrcode)
+
             }
             .addOnFailureListener {
                 Log.e("error", it.message.toString())
             }
+    }
+
+    private fun saveQRCode(){
+        binding.imgQrcode.drawable?.let {
+            val mBitmap = (it as BitmapDrawable).bitmap
+            mBitmap.saveToGallery()
+            uploadImage()
+        }
+    }
+
+    //create file to save image from camera to gallery
+    @Throws(IOException::class)
+    private fun createImagineFile(): File {
+        var path: String =
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES)
+                .toString() + separator.toString() + "OCRKotlin"
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            path = getExternalFilesDir(Environment.DIRECTORY_PICTURES).toString() + separator.toString() + "OCRKotlin"
+        }
+        val outputDir = File(path)
+        outputDir.mkdir()
+        val timeStamp: String = SimpleDateFormat("yyyyMMddHHmmss", Locale.ENGLISH).format(Date())
+        val fileName = "OCRKotlin_$timeStamp.jpg"
+        val image = File(path + separator.toString() + fileName)
+        imagePath = image.absolutePath
+        imageName = fileName
+        Log.e("imagePath", imagePath)
+        Log.e("imageAbsolute", image.absolutePath.toString())
+        return image
+    }
+
+    //save bitmap to gallery
+    private fun Bitmap.saveToGallery(): Uri? {
+        val file = createImagineFile()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val values = ContentValues()
+            values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg")
+            values.put(MediaStore.Images.Media.DATE_ADDED, System.currentTimeMillis() / 1000)
+            values.put(MediaStore.Images.Media.DATE_TAKEN, System.currentTimeMillis())
+            values.put(MediaStore.Images.Media.RELATIVE_PATH, file.absolutePath)
+            values.put(MediaStore.Images.Media.IS_PENDING, true)
+            values.put(MediaStore.Images.Media.DISPLAY_NAME, file.name)
+
+            val uri: Uri? =
+                contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+            if (uri != null) {
+                saveImageToStream(this, contentResolver.openOutputStream(uri))
+                values.put(MediaStore.Images.Media.IS_PENDING, false)
+                contentResolver.update(uri, values, null, null)
+                return uri
+            }
+        } else {
+            saveImageToStream(this, FileOutputStream(file))
+            val values = ContentValues()
+            values.put(MediaStore.Images.Media.DATA, file.absolutePath)
+            // .DATA is deprecated in API 29
+            contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+            return Uri.fromFile(file)
+        }
+
+        return null
+    }
+
+    //save image to stream
+    private fun saveImageToStream(bitmap: Bitmap, outputStream: OutputStream?) {
+        if (outputStream != null) {
+            try {
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
+                outputStream.close()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    //upload image
+    private fun uploadImage() {
+        val file = Uri.fromFile(File(imagePath))
+        val fileName = imageName
+        val imageURL = "/$fileName"
+        Log.e("name", imageURL)
+        val riversRef = storageRef.child(imageURL)
+        val uploadTask = riversRef.putFile(file)
+        uploadTask.continueWithTask { task ->
+            if (!task.isSuccessful) {
+                task.exception?.let {
+                    throw it
+                }
+            }
+            riversRef.downloadUrl
+        }.addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                Log.e("success", "upload")
+                Toast.makeText(this, "success upload", Toast.LENGTH_LONG).show()
+            } else {
+                Log.e("failed", "upload")
+                Toast.makeText(this, "failed upload", Toast.LENGTH_LONG).show()
+            }
+        }
     }
 
 }

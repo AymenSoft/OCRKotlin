@@ -1,0 +1,69 @@
+{
+  "project_info": {
+    "project_number": "608071942956",
+    "firebase_url": "https://kotlinfirebasedemo-331012-default-rtdb.firebaseio.com",
+    "project_id": "kotlinfirebasedemo-331012",
+    "storage_bucket": "kotlinfirebasedemo-331012.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:608071942956:android:a403f1f344f314fa25e289",
+        "android_client_info": {
+          "package_name": "com.app.firebasedemo"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "608071942956-rtqpnqd0iuur6b2eo128tus4av3n7tuc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBCi0DjPYdoEuttfMBuG1cwuhb7Rs601yc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "608071942956-rtqpnqd0iuur6b2eo128tus4av3n7tuc.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:608071942956:android:5154f6e39f1d594d25e289",
+        "android_client_info": {
+          "package_name": "com.aymensoft.ocrkotlin"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "608071942956-rtqpnqd0iuur6b2eo128tus4av3n7tuc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBCi0DjPYdoEuttfMBuG1cwuhb7Rs601yc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "608071942956-rtqpnqd0iuur6b2eo128tus4av3n7tuc.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
